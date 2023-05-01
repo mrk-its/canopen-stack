@@ -506,22 +506,9 @@ CO_ERR CORPdoGetMap(CO_RPDO *pdo, uint16_t num)
             return (CO_ERR_RPDO_MAP_OBJ);
         }
         link = mapping >> 16;
-        if ((link == 2) || (link == 5)) {
+        if ((link >= 2) && (link <= 7)) {
             pdo[num].Map[on + dummy] = 0;
-            dummy++;
-        } else if ((link == 3) || (link == 6)) {
-            pdo[num].Map[on + dummy] = 0;
-            dummy++;
-            pdo[num].Map[on + dummy] = 0;
-            dummy++;
-        } else if ((link == 4) || (link == 7)) {
-            pdo[num].Map[on + dummy] = 0;
-            dummy++;
-            pdo[num].Map[on + dummy] = 0;
-            dummy++;
-            pdo[num].Map[on + dummy] = 0;
-            dummy++;
-            pdo[num].Map[on + dummy] = 0;
+            pdo[num].Size[on + dummy] = size;
             dummy++;
         } else {
             obj = CODictFind(&pdo->Node->Dict, mapping);
@@ -606,6 +593,8 @@ void CORPdoWrite(CO_RPDO *pdo, CO_IF_FRM *frm)
             } else {
                 CORpdoWriteData(frm, dlc, pdosz, obj);
             }
+        } else {
+            dlc += pdosz;
         }
     }
 }
