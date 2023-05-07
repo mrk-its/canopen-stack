@@ -484,7 +484,6 @@ CO_ERR CORPdoGetMap(CO_RPDO *pdo, uint16_t num)
     uint8_t   mapnum;
     uint8_t   dlc;
     uint8_t   size;
-    uint8_t   dummy = 0;
 
     cod = &pdo[num].Node->Dict;
     idx = 0x1600 + num;
@@ -507,20 +506,19 @@ CO_ERR CORPdoGetMap(CO_RPDO *pdo, uint16_t num)
         }
         link = mapping >> 16;
         if ((link >= 2) && (link <= 7)) {
-            pdo[num].Map[on + dummy] = 0;
-            pdo[num].Size[on + dummy] = size;
-            dummy++;
+            pdo[num].Map[on] = 0;
+            pdo[num].Size[on] = size;
         } else {
             obj = CODictFind(&pdo->Node->Dict, mapping);
             if (obj == 0) {
                 return (CO_ERR_RPDO_MAP_OBJ);
             } else {
-                pdo[num].Map[on + dummy] = obj;
-                pdo[num].Size[on + dummy] = size;
+                pdo[num].Map[on] = obj;
+                pdo[num].Size[on] = size;
             }
         }
     }
-    pdo[num].ObjNum = mapnum + dummy;
+    pdo[num].ObjNum = mapnum;
     return (CO_ERR_NONE);
 }
 
