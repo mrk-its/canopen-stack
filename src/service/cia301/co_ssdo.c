@@ -281,6 +281,7 @@ CO_ERR COSdoUploadExpedited(CO_SDO *srv)
     if (size == 0) {
         return (result);
     } else if (size <= 4) {
+        (void)COObjReset(srv->Obj, srv->Node, 0);
         err = COObjRdValue(srv->Obj, srv->Node, (void *)&data, (uint8_t)size);
         if (err != CO_ERR_NONE) {
             if (srv->Abort > 0) {
