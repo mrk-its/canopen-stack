@@ -1,0 +1,18 @@
+{
+  "build": {
+    "flags": [
+      "-Isrc/object/basic",
+      "-Isrc/core",
+      "-Isrc/object/cia301/",
+      "-Isrc/service/cia301/",
+      "-Isrc/service/cia305/",
+      "-Isrc/hal",
+      "-Isrc/config"
+    ],
+    "srcFilter": "+<*> -<driver/_template/>"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embedded-office/canopen-stack"
+  }
+}
