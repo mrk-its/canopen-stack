@@ -1,6 +1,7 @@
 {
   "build": {
     "flags": [
+      "-Ilocal_config",
       "-Isrc/object/basic",
       "-Isrc/core",
       "-Isrc/object/cia301/",
