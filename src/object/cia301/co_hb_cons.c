@@ -184,28 +184,25 @@ CO_ERR CONmtHbConsActivate(CO_HBCONS *hbc, uint16_t time, uint8_t nodeid)
     }
 
     if (found != 0) {
-        if (time > 0) {
-            result = CO_ERR_OBJ_INCOMPATIBLE;
-        } else {
-            if (hbc->Tmr >= 0) {
-                err = COTmrDelete(&nmt->Node->Tmr, hbc->Tmr);
-                if (err < 0) {
-                    result = CO_ERR_TMR_DELETE;
-                }
+        hbc = found;
+        if (hbc->Tmr >= 0) {
+            err = COTmrDelete(&nmt->Node->Tmr, hbc->Tmr);
+            if (err < 0) {
+                result = CO_ERR_TMR_DELETE;
             }
-            hbc->Time   = time;
-            hbc->NodeId = nodeid;
-            hbc->Tmr    = -1;
-            hbc->Event  = 0;
-            hbc->State  = CO_INVALID;
-            hbc->Node   = nmt->Node;
-            if (prev == 0) {
-                nmt->HbCons = hbc->Next;
-            } else {
-                prev->Next  = hbc->Next;
-            }
-            hbc->Next   = 0;
         }
+        hbc->Time   = time;
+        hbc->NodeId = nodeid;
+        hbc->Tmr    = -1;
+        hbc->Event  = 0;
+        hbc->State  = CO_INVALID;
+        hbc->Node   = nmt->Node;
+        if (prev == 0) {
+            nmt->HbCons = hbc->Next;
+        } else {
+            prev->Next  = hbc->Next;
+        }
+        hbc->Next   = 0;
     } else {
         hbc->Time   = time;
         hbc->NodeId = nodeid;
@@ -220,6 +217,13 @@ CO_ERR CONmtHbConsActivate(CO_HBCONS *hbc, uint16_t time, uint8_t nodeid)
         } else {
             hbc->Next   = 0;
         }
+    }
+    if(result == CO_ERR_NONE) {
+        hbc->Tmr = COTmrCreate(&nmt->Node->Tmr,
+            hbc->Time,
+            0,
+            CONmtHbConsMonitor,
+            hbc);
     }
 
     return (result);
