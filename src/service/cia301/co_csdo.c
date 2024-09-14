@@ -157,10 +157,6 @@ static void COCSdoTransferFinalize(CO_CSDO *csdo)
         code = csdo->Tfer.Abort;
         call = csdo->Tfer.Call;
 
-        if (call != NULL) {
-            call(csdo, idx, sub, code);
-        }
-
         /* Reset finished transfer information */
         csdo->Tfer.Type  = CO_CSDO_TRANSFER_NONE;
         csdo->Tfer.Abort = 0;
@@ -177,6 +173,10 @@ static void COCSdoTransferFinalize(CO_CSDO *csdo)
         /* Release SDO client for next request */
         csdo->Frm   = NULL;
         csdo->State = CO_CSDO_STATE_IDLE;
+
+        if (call != NULL) {
+            call(csdo, idx, sub, code);
+        }
     }
 }
 
