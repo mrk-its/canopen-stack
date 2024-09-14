@@ -131,24 +131,18 @@ static CO_ERR COTNmtHbConsInit(struct CO_OBJ_T *obj, struct CO_NODE_T *node)
 
     /* check for heartbeat consumer object */
     if (CO_GET_IDX(obj->Key) == COT_OBJECT) {
-        if (CO_GET_SUB(obj->Key) == 0) {
-            /* loop through configured number of consumers */
-            (void)uint8->Read(obj, node, &num, sizeof(num));
-            while (num > 0) {
-                /* check if consumer subindex exists */
-                obj = CODictFind(&node->Dict, CO_DEV(COT_OBJECT, num));
-                if ((obj == 0) || (obj->Data == (CO_DATA)0)){
-                    return (CO_ERR_TYPE_INIT);
-                }
+        if (CO_GET_SUB(obj->Key) > 0) {
+            obj = CODictFind(&node->Dict, CO_DEV(COT_OBJECT, CO_GET_SUB(obj->Key)));
+            if ((obj == 0) || (obj->Data == (CO_DATA)0)){
+                return (CO_ERR_TYPE_INIT);
+            }
 
-                /* activate the consumer subindex for this node */
-                hbc = (CO_HBCONS *)(obj->Data);
-                hbc->Node = node;
-                result = CONmtHbConsActivate(hbc, hbc->Time, hbc->NodeId);
-                if (result != CO_ERR_NONE) {
-                    return (CO_ERR_TYPE_INIT);
-                }
-                num--;
+            /* activate the consumer subindex for this node */
+            hbc = (CO_HBCONS *)(obj->Data);
+            hbc->Node = node;
+            result = CONmtHbConsActivate(hbc, hbc->Time, hbc->NodeId);
+            if (result != CO_ERR_NONE) {
+                return (CO_ERR_TYPE_INIT);
             }
         } else {
             result = CO_ERR_NONE;
