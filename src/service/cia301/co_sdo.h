@@ -102,7 +102,7 @@ extern "C"{
 #define CO_SDO_ERR_PARA_INCOMP  0x06040043    /*!< parameter incompatibility reason       */
 #define CO_SDO_ERR_GENERAL      0x08000000    /*!< General error                          */
 
-#define CO_SDO_BUF_SEG     127
+#define CO_SDO_BUF_SEG     64
 #define CO_SDO_BUF_BYTE    (CO_SDO_BUF_SEG*7) /*!< transfer buffer size in byte           */
 
 /******************************************************************************
