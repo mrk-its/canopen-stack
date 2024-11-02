@@ -626,7 +626,6 @@ CO_ERR COSdoEndDownloadBlock(CO_SDO *srv)
     if ((cmd & 0x01) != 0) {
         n      = (cmd & 0x1C) >> 2;
         len    = ((uint32_t)srv->Buf.Num - n);
-        result = COObjWrBufCont(srv->Obj, srv->Node, srv->Buf.Start, len);
 
         if (srv->Obj->Type != 0) {
             /* write at current offset for typed object entry */
@@ -654,6 +653,21 @@ CO_ERR COSdoEndDownloadBlock(CO_SDO *srv)
     return (result);
 }
 
+void COSdoDownloadBlockFlushBuffer(CO_SDO *srv) {
+    uint32_t len;
+    CO_ERR   err;
+    len = (uint32_t)srv->Buf.Num;
+
+    if (len > 0) {
+        err = COObjWrBufCont(srv->Obj, srv->Node, srv->Buf.Start, len);
+        if (err != CO_ERR_NONE) {
+            srv->Node->Error = CO_ERR_SDO_WRITE;
+        }
+        srv->Buf.Cur = srv->Buf.Start;
+        srv->Buf.Num = 0;
+    }
+}
+
 CO_ERR COSdoDownloadBlock(CO_SDO *srv)
 {
     CO_ERR   result = CO_ERR_SDO_SILENT;
@@ -666,7 +680,7 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
     cmd = CO_GET_BYTE(srv->Frm, 0);
     if ((cmd & 0x7F) == (srv->Blk.SegCnt + 1)) {
         /* check, that we need at least 1 byte out of the payload */
-        if (srv->Blk.Len > 0) {
+        if (srv->Blk.Len > 0 && srv->Buf.Num < CO_SDO_BUF_BYTE) {
             for (i = 0; i < 7; i++) {
                 *(srv->Buf.Cur) = CO_GET_BYTE(srv->Frm, 1 + i);
                 srv->Buf.Cur++;
@@ -703,13 +717,7 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
 
         if (result == CO_ERR_NONE) {
             if ((cmd & 0x80) == 0) {
-                len = (uint32_t)srv->Buf.Num;
-                err = COObjWrBufCont(srv->Obj, srv->Node, srv->Buf.Start, len);
-                if (err != CO_ERR_NONE) {
-                    srv->Node->Error = CO_ERR_SDO_WRITE;
-                }
-                srv->Buf.Cur = srv->Buf.Start;
-                srv->Buf.Num = 0;
+                COSdoDownloadBlockFlushBuffer(srv);
             }
         }
     } else {
@@ -717,6 +725,8 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
 
         if (((cmd & 0x7F) == srv->Blk.SegNum) ||
             ((cmd & 0x80) != 0             )) {
+
+            COSdoDownloadBlockFlushBuffer(srv);
 
             SegmentCnt = COSdoBlockSizeRequest(srv->Blk.Len, CO_SDO_BUF_SEG);
             srv->Blk.SegNum = SegmentCnt;

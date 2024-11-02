@@ -80,4 +80,8 @@
 #define USE_CSDO                1
 #endif
 
+#ifndef CO_SDO_BUF_SEG
+#define CO_SDO_BUF_SEG     127
+#endif
+
 #endif  /* #ifndef CO_CFG_H_ */
