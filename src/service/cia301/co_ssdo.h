@@ -80,6 +80,7 @@ typedef struct CO_SDO_BLK_T {
     uint8_t                 SegCnt;     /*!< current segment number          */
     uint8_t                 SegOk;      /*!< last successfull sent segment   */
     uint8_t                 LastValid;  /*!< valid bytes in last segment     */
+    int16_t                 Tmr;
 
 } CO_SDO_BLK;
 

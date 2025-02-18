@@ -365,6 +365,8 @@ void COSdoAbort(CO_SDO *srv, uint32_t err)
     CO_SET_LONG(srv->Frm,      err, 4);
 
     srv->Obj = 0;
+
+    (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
 }
 
 CO_ERR COSdoInitUploadSegmented(CO_SDO *srv, uint32_t size)
@@ -571,6 +573,29 @@ CO_ERR COSdoDownloadSegmented(CO_SDO *srv)
     return (result);
 }
 
+static void OnBlkDownloadTimeout(void *parg) {
+    CO_SDO *srv = (CO_SDO *)parg;
+    uint32_t SegmentCnt;
+    CO_IF_FRM frm;
+
+    COSdoDownloadBlockFlushBuffer(srv);
+    SegmentCnt = COSdoBlockSizeRequest(srv->Blk.Len, CO_SDO_BUF_SEG);
+    srv->Blk.SegNum = SegmentCnt;
+
+    CO_SET_BYTE(&frm, 0xA2, 0);
+    CO_SET_BYTE(&frm, srv->Blk.SegCnt & 0x7F, 1);
+    CO_SET_BYTE(&frm, SegmentCnt, 2);
+    CO_SET_BYTE(&frm, 0, 3);
+    CO_SET_LONG(&frm, 0, 4);
+
+    CO_SET_ID(&frm, srv->TxId);
+    CO_SET_DLC(&frm, 8u);
+
+    srv->Blk.SegCnt = 0;
+
+    (void)COIfCanSend(&srv->Node->If, &frm);
+}
+
 CO_ERR COSdoInitDownloadBlock(CO_SDO *srv)
 {
     CO_ERR   result = CO_ERR_SDO_ABORT;
@@ -594,6 +619,7 @@ CO_ERR COSdoInitDownloadBlock(CO_SDO *srv)
         srv->Blk.Len    = size;
         srv->Buf.Cur    = srv->Buf.Start;
         srv->Buf.Num    = 0;
+        srv->Blk.Tmr    = -1;
 
         CO_SET_BYTE(srv->Frm, 0xA0, 0);
         CO_SET_LONG(srv->Frm, SegmentCnt, 4);
@@ -650,6 +676,8 @@ CO_ERR COSdoEndDownloadBlock(CO_SDO *srv)
         srv->Buf.Num   = 0;
         srv->Obj       = 0;
     }
+    (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+
     return (result);
 }
 
@@ -713,12 +741,15 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             srv->Blk.SegCnt  = 0;
             srv->Blk.State   = BLK_DNWAIT;
             result           = CO_ERR_NONE;
-        }
-
-        if (result == CO_ERR_NONE) {
             if ((cmd & 0x80) == 0) {
                 COSdoDownloadBlockFlushBuffer(srv);
             }
+        }
+        (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+        if(!(cmd & 0x80)) {
+            // refresh timer
+            uint32_t ticks = COTmrGetTicks(&(srv->Node->Tmr), CO_SDO_TIMEOUT_MS, CO_TMR_UNIT_1MS);
+            srv->Blk.Tmr    = COTmrCreate(&(srv->Node->Tmr), ticks, 0, OnBlkDownloadTimeout, srv);
         }
     } else {
         srv->Blk.SegCnt |= 0x80;
@@ -739,6 +770,10 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             srv->Blk.SegCnt = 0;
             result          = CO_ERR_NONE;
         }
+        // refresh timer
+        (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+        uint32_t ticks = COTmrGetTicks(&(srv->Node->Tmr), CO_SDO_TIMEOUT_MS, CO_TMR_UNIT_1MS);
+        srv->Blk.Tmr    = COTmrCreate(&(srv->Node->Tmr), ticks, 0, OnBlkDownloadTimeout, srv);
     }
     return (result);
 }

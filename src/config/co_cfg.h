@@ -84,4 +84,8 @@
 #define CO_SDO_BUF_SEG     127
 #endif
 
+#ifndef CO_SDO_TIMEOUT_MS
+#define CO_SDO_TIMEOUT_MS     2000
+#endif
+
 #endif  /* #ifndef CO_CFG_H_ */
