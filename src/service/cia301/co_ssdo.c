@@ -20,6 +20,8 @@
 
 #include "co_core.h"
 
+extern void esp_log(const char *tag, const char *fmt, ...);
+
 static uint32_t COSdoBlockSizeRequest(uint32_t SizeRemaining, uint32_t MaxSize);
 
 /******************************************************************************
