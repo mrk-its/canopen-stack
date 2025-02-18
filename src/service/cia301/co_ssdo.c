@@ -626,6 +626,15 @@ CO_ERR COSdoInitDownloadBlock(CO_SDO *srv)
         CO_SET_BYTE(srv->Frm, 0xA0, 0);
         CO_SET_LONG(srv->Frm, SegmentCnt, 4);
 
+        // do not initialize firmware yet here
+        // as esp32 ota initialization block for few seconds
+        // and timer instantly fires
+        // it can be fixed more proper way by starting ota before block download is started
+        //
+        // esp_log("canopen-stack", "COSdoInitDownloadBlock, create timer");
+        // uint32_t ticks = COTmrGetTicks(&(srv->Node->Tmr), CO_SDO_TIMEOUT_MS, CO_TMR_UNIT_1MS);
+        // srv->Blk.Tmr    = COTmrCreate(&(srv->Node->Tmr), ticks, 0, OnBlkDownloadTimeout, srv);
+
         if (size <= 4) {
             /* no action for basic type entry */
             result = CO_ERR_NONE;
@@ -711,6 +720,10 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
     if ((cmd & 0x7F) == (srv->Blk.SegCnt + 1)) {
         /* check, that we need at least 1 byte out of the payload */
         if (srv->Blk.Len > 0 && srv->Buf.Num < CO_SDO_BUF_BYTE) {
+            // esp_log("canopen-stack", "COSdoDownloadBlock recv data: %02x %02x %02x %02x %02x %02x %02x %Blk.Len: %d, Buf.Num: %d, cmd: %d, Blk.SegCnt: %d",
+            // CO_GET_BYTE(srv->Frm, 1), CO_GET_BYTE(srv->Frm, 2), CO_GET_BYTE(srv->Frm, 3), CO_GET_BYTE(srv->Frm, 4),
+            // CO_GET_BYTE(srv->Frm, 5), CO_GET_BYTE(srv->Frm, 6), CO_GET_BYTE(srv->Frm, 7),
+            // srv->Blk.Len, srv->Buf.Num, cmd, srv->Blk.SegCnt);
             for (i = 0; i < 7; i++) {
                 *(srv->Buf.Cur) = CO_GET_BYTE(srv->Frm, 1 + i);
                 srv->Buf.Cur++;
@@ -720,6 +733,7 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
                 }
             }
         } else {
+            esp_log("canopen-stack", "COSdoDownloadBlock, abort. Blk.Len: %d, Buf.Num: %d, cmd: %d, Blk.SegCnt: %d", srv->Blk.Len, srv->Buf.Num, cmd, srv->Blk.SegCnt);
             srv->Blk.State = BLK_IDLE;
             srv->Buf.Cur   = srv->Buf.Start;
             srv->Buf.Num   = 0;
@@ -746,6 +760,7 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             if ((cmd & 0x80) == 0) {
                 COSdoDownloadBlockFlushBuffer(srv);
             }
+            // esp_log("canopen-stack", "COSdoDownloadBlock, sent ack. Blk.Len: %d, Blk.Size: %d", srv->Blk.Len, srv->Blk.Size);
         }
         (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
         if(!(cmd & 0x80)) {
