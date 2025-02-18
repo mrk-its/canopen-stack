@@ -575,29 +575,6 @@ CO_ERR COSdoDownloadSegmented(CO_SDO *srv)
     return (result);
 }
 
-static void OnBlkDownloadTimeout(void *parg) {
-    CO_SDO *srv = (CO_SDO *)parg;
-    uint32_t SegmentCnt;
-    CO_IF_FRM frm;
-
-    COSdoDownloadBlockFlushBuffer(srv);
-    SegmentCnt = COSdoBlockSizeRequest(srv->Blk.Len, CO_SDO_BUF_SEG);
-    srv->Blk.SegNum = SegmentCnt;
-
-    CO_SET_BYTE(&frm, 0xA2, 0);
-    CO_SET_BYTE(&frm, srv->Blk.SegCnt & 0x7F, 1);
-    CO_SET_BYTE(&frm, SegmentCnt, 2);
-    CO_SET_BYTE(&frm, 0, 3);
-    CO_SET_LONG(&frm, 0, 4);
-
-    CO_SET_ID(&frm, srv->TxId);
-    CO_SET_DLC(&frm, 8u);
-
-    srv->Blk.SegCnt = 0;
-
-    (void)COIfCanSend(&srv->Node->If, &frm);
-}
-
 CO_ERR COSdoInitDownloadBlock(CO_SDO *srv)
 {
     CO_ERR   result = CO_ERR_SDO_ABORT;
@@ -696,6 +673,29 @@ void COSdoDownloadBlockFlushBuffer(CO_SDO *srv) {
         srv->Buf.Cur = srv->Buf.Start;
         srv->Buf.Num = 0;
     }
+}
+
+static void OnBlkDownloadTimeout(void *parg) {
+    CO_SDO *srv = (CO_SDO *)parg;
+    uint32_t SegmentCnt;
+    CO_IF_FRM frm;
+
+    COSdoDownloadBlockFlushBuffer(srv);
+    SegmentCnt = COSdoBlockSizeRequest(srv->Blk.Len, CO_SDO_BUF_SEG);
+    srv->Blk.SegNum = SegmentCnt;
+
+    CO_SET_BYTE(&frm, 0xA2, 0);
+    CO_SET_BYTE(&frm, srv->Blk.SegCnt & 0x7F, 1);
+    CO_SET_BYTE(&frm, SegmentCnt, 2);
+    CO_SET_BYTE(&frm, 0, 3);
+    CO_SET_LONG(&frm, 0, 4);
+
+    CO_SET_ID(&frm, srv->TxId);
+    CO_SET_DLC(&frm, 8u);
+
+    srv->Blk.SegCnt = 0;
+
+    (void)COIfCanSend(&srv->Node->If, &frm);
 }
 
 CO_ERR COSdoDownloadBlock(CO_SDO *srv)
