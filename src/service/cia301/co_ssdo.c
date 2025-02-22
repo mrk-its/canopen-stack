@@ -59,6 +59,7 @@ void COSdoReset(CO_SDO *srv, uint8_t num, CO_NODE *node)
     srvnum->Seg.Num      = 0;
     srvnum->Seg.Size     = 0;
     srvnum->Blk.State    = BLK_IDLE;
+    srvnum->Blk.Tmr      = -1;
 }
 
 WEAK_TEST
@@ -367,6 +368,7 @@ void COSdoAbort(CO_SDO *srv, uint32_t err)
     srv->Obj = 0;
 
     (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+    srv->Blk.Tmr = -1;
 }
 
 CO_ERR COSdoInitUploadSegmented(CO_SDO *srv, uint32_t size)
@@ -596,7 +598,9 @@ CO_ERR COSdoInitDownloadBlock(CO_SDO *srv)
         srv->Blk.Len    = size;
         srv->Buf.Cur    = srv->Buf.Start;
         srv->Buf.Num    = 0;
-        srv->Blk.Tmr    = -1;
+
+        (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+        srv->Blk.Tmr = -1;
 
         CO_SET_BYTE(srv->Frm, 0xA0, 0);
         CO_SET_LONG(srv->Frm, SegmentCnt, 4);
@@ -654,6 +658,7 @@ CO_ERR COSdoEndDownloadBlock(CO_SDO *srv)
         srv->Obj       = 0;
     }
     (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+    srv->Blk.Tmr = -1;
 
     return (result);
 }
@@ -746,6 +751,7 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             }
         }
         (void)COTmrDelete(&(srv->Node->Tmr), srv->Blk.Tmr);
+        srv->Blk.Tmr = -1;
         if(!(cmd & 0x80)) {
             // refresh timer
             uint32_t ticks = COTmrGetTicks(&(srv->Node->Tmr), CO_SDO_TIMEOUT_MS, CO_TMR_UNIT_1MS);
