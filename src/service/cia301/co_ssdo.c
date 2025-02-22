@@ -702,6 +702,11 @@ static void OnBlkDownloadTimeout(void *parg) {
     CO_SET_BYTE(&frm, 0, 3);
     CO_SET_LONG(&frm, 0, 4);
 
+    // esp_log(
+    //     "canopen-stack", "OnBlkDownloadTimeout, ACK %d of %d, Blk.Len: %d",
+    //     frm.Data[1], frm.Data[2], srv->Blk.Len
+    // );
+
     CO_SET_ID(&frm, srv->TxId);
     CO_SET_DLC(&frm, 8u);
 
@@ -732,6 +737,10 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
                 }
             }
         } else {
+            // esp_log(
+            //     "canopen-stack", "COSdoDownloadBlock, ABORT. Blk.Len: %d, Buf.Num: %d, cmd: %d, Blk.SegCnt: %d",
+            //     srv->Blk.Len, srv->Buf.Num, cmd, srv->Blk.SegCnt
+            // );
             srv->Blk.State = BLK_IDLE;
             srv->Buf.Cur   = srv->Buf.Start;
             srv->Buf.Num   = 0;
@@ -752,6 +761,10 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             for (i = 3; i <= 7; i++) {
                 CO_SET_BYTE(srv->Frm, 0, i);
             }
+            // esp_log(
+            //     "canopen-stack", "COSdoDownloadBlock, ACK %d of %d, Blk.Len: %d",
+            //     srv->Frm->Data[1], srv->Frm->Data[2], srv->Blk.Len
+            // );
             srv->Blk.SegCnt  = 0;
             srv->Blk.State   = BLK_DNWAIT;
             result           = CO_ERR_NONE;
@@ -782,6 +795,10 @@ CO_ERR COSdoDownloadBlock(CO_SDO *srv)
             CO_SET_BYTE(srv->Frm, 0, 3);
             CO_SET_LONG(srv->Frm, 0, 4);
 
+            // esp_log(
+            //     "canopen-stack", "COSdoDownloadBlock, ACK %d of %d (retry), Blk.Len: %d",
+            //     srv->Frm->Data[1], srv->Frm->Data[2], srv->Blk.Len
+            // );
             srv->Blk.SegCnt = 0;
             result          = CO_ERR_NONE;
         }
