@@ -688,7 +688,16 @@ static void OnBlkDownloadTimeout(void *parg) {
     srv->Blk.SegNum = SegmentCnt;
 
     CO_SET_BYTE(&frm, 0xA2, 0);
-    CO_SET_BYTE(&frm, srv->Blk.SegCnt & 0x7F, 1);
+    uint8_t last_seg = srv->Blk.SegCnt & 0x7F;
+    if(!last_seg) {
+        // there are 2 posibilities here:
+        // - last ack was lost by client, so we should resend ack with previouse segment num
+        // - last ack was received, but we lost whole block of segments - we should send ack with last_seg=0
+        // For now I have no idea how to distinguish these 2 cases - so let's assume first one as it is much
+        // more likely and occures frequently.
+        last_seg = SegmentCnt;
+    }
+    CO_SET_BYTE(&frm, last_seg, 1);
     CO_SET_BYTE(&frm, SegmentCnt, 2);
     CO_SET_BYTE(&frm, 0, 3);
     CO_SET_LONG(&frm, 0, 4);
