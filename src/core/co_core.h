@@ -206,6 +206,8 @@ void CONodeProcess(CO_NODE *node);
 */
 extern void CONodeFatalError(void);
 
+extern void esp_log(const char *tag, const char *fmt, ...);
+
 #ifdef __cplusplus               /* for compatibility with C++ environments  */
 }
 #endif
